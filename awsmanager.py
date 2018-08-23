@@ -8,6 +8,10 @@ from botocore.exceptions import ClientError
 
 
 def init():
+    """
+    Initialize access parameter for AWS.
+    Return access session to AWS Account.
+    """
     colorama.init()
     session = boto3.Session(
         aws_access_key_id="AWS_ACCESS_KEY",
@@ -15,6 +19,7 @@ def init():
     )
 
     return session
+
 
 def help():
     print("USAGE: python awsmanager.py [regions/instances/action/info] [instance_id region] [start/stop/termintate]\n")
@@ -28,6 +33,12 @@ def help():
 
 
 def progress(count, total, status=''):
+    """
+    Method to manage ProgressBar
+    :param count: actual step
+    :param total: total steps
+    :param status: String to print in progress bar
+    """
     bar_len = 60
     filled_len = int(round(bar_len * count / float(total)))
 
@@ -39,6 +50,14 @@ def progress(count, total, status=''):
 
 
 def list_instances(session):
+    """
+    Method prints list of all EC2 AWS Instance configured on your amazon account.
+    It searches on each region and print table with most important values.
+    Of course you can add other info by consulting guide for python api from AWS support.
+
+    :param session: session object returned by init method
+    :return: print list of AWS instance
+    """
     try:
         t = PrettyTable(['Region', 'Id', 'State', 'Launched', 'KeyName', 'Ip Address'])
 
@@ -68,6 +87,14 @@ def list_instances(session):
 
 
 def get_instance_info(session, instance_id, region):
+    """
+    Methods print most important info of EC2 AWS machine you choose
+
+    :param session: session object returned by init method
+    :param instance_id: from the ec2 aws machine you would info
+    :param region: from the ec2 aws machine you would info
+    :return: most important info of ec2 aws machine you choose
+    """
     ec2 = session.resource('ec2', region)
     instance = ec2.Instance(instance_id)
     t = PrettyTable(['Region', 'Id', 'State', 'Launched', 'KeyName', 'Ip Address'])
@@ -83,6 +110,11 @@ def get_instance_info(session, instance_id, region):
 
 
 def list_regions(session):
+    """
+    Methods that prints all available regions of your amazon aws account
+    :param session: session object returned by init method
+    :return: print available regions
+    """
     ec2 = session.client('ec2', 'eu-west-1')
     t = PrettyTable(['Region'])
     for region in ec2.describe_regions()['Regions']:
@@ -92,6 +124,17 @@ def list_regions(session):
 
 
 def instance_actions(session, instance_id, region, action):
+    """
+    Method to manage command to send to Amazon AWS Rest API.
+    For now, I manage only start, stop and terminate.
+    After sending command, method call list_instances to see pending actions.
+
+    :param session: session object returned by init method
+    :param instance_id: of aws machine you choose to manage
+    :param region: of aws machine you choose to manage
+    :param action: action that you want to do
+    :return: print Response of requested action sended to amazon.
+    """
     ec2 = session.client('ec2', region)
 
     if action == 'start':
@@ -140,7 +183,13 @@ def instance_actions(session, instance_id, region, action):
 
 
 def main(argv):
+    """
+    Method take arguments from command lines and do the commands displayed on help print.
+    :param argv: arguments from commandline
+    :return: prints the output of command sended through terminal
+    """
     param = argv[1]
+
     session = init()
 
     if param == 'regions':
@@ -153,20 +202,24 @@ def main(argv):
         if argv[2] != "" and argv[3]:
             get_instance_info(session, argv[2], argv[3])
         else:
-            print "Missing Parameters. See USAGE"
+            print "Missing Parameters for info. See USAGE"
 
     elif param == 'action':
         if argv[2] != "" and argv[3] != "" and argv[4] != "":
             instance_actions(session, argv[2], argv[3], argv[4])
             get_instance_info(session, argv[2], argv[3])
+        else:
+            print "Missing Parameters for action. See USAGE"
 
     elif param == 'help':
-        if argv[2] != "" and argv[3] != "" and argv[4] != "":
-            instance_actions(session, argv[2], argv[3], argv[4])
-            get_instance_info(session, argv[2], argv[3])
+        help()
+    else:
+        print "Wrong Command or Option, see USAGE.\n"
+        help()
 
 
 if __name__ == "__main__":
+    # Check arguments from terminal
     if len(sys.argv) < 2:
         help()
     else:
