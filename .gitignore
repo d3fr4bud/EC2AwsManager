@@ -1,0 +1,6 @@
+#ignore TEST
+test.py
+#ignore virtual env
+venv/*
+#ignore idea
+.idea/*
